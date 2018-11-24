@@ -1,12 +1,10 @@
 extern crate sdl2;
-extern crate rand;
-extern crate imgui;
-extern crate stb_image;
 
 #[cfg(feature = "hotload")]
 extern crate dynamic_reload;
 #[cfg(target_os="android")]
 extern crate jni;
+extern crate rusttype;
 
 
 #[cfg(target_os="android")]
@@ -19,44 +17,23 @@ use jni::JNIEnv;
 use jni::sys::jint;
 #[cfg(target_os="android")]
 use sdl2::libc::c_char;
+use sdl2::pixels::Color;
+use sdl2::event::Event;
+use sdl2::keyboard::Keycode;
+use std::time::Duration;
 
-pub mod test_shared;
-pub mod engine;
-pub mod blendmode;
-pub mod shader;
-pub mod renderstate;
-pub mod rectangle;
-pub mod texture;
-pub mod color;
-pub mod vertexpositioncolortexture;
-pub mod log;
-pub mod graphicsdevice;
-pub mod spritebatchitem;
-pub mod spritebatch;
-pub mod spritebatcher;
-pub mod spritefont;
-pub mod texturemanager;
-pub mod camera;
-pub mod utils;
-pub mod viewportadapter;
-pub mod entity;
-pub mod component;
-pub mod componentlist;
-pub mod entitylist;
-pub mod scene;
-pub mod collider;
-pub mod colliderlist;
-pub mod subtexture;
-pub mod imagecomponent;
-pub mod renderer;
-pub mod everythingrenderer;
+mod text;
+mod game_tile;
+mod clickable;
+mod drawable;
+
+use clickable::Clickable;
+use drawable::Drawable;
 
 #[no_mangle]
 #[allow(non_snake_case)]
 pub extern "C" fn SDL_main() -> i32 {
-    let mut e = engine::Engine::new();
-    e.run_loop();
-    //engine::run_loop();
+    rust_main();
     0
 }
 
@@ -83,49 +60,84 @@ pub unsafe extern "C" fn Java_org_libsdl_app_SDLActivity_nativeInit(env: JNIEnv,
     SDL_SetMainReady();
 
     /* Prepare the arguments. */
-
-/*
-    len = (*env)->GetArrayLength(env, array);
-    argv = SDL_stack_alloc(char*, 1 + len + 1);
-    argc = 0;
-    */
-    /* Use the name "app_process" so PHYSFS_platformCalcBaseDir() works.
-       https://bitbucket.org/MartinFelis/love-android-sdl2/issue/23/release-build-crash-on-start
-     */
-     /*
-    argv[argc++] = SDL_strdup("app_process");
-    for (i = 0; i < len; ++i) {
-        const char* utf;
-        char* arg = NULL;
-        jstring string = (*env)->GetObjectArrayElement(env, array, i);
-        if (string) {
-            utf = (*env)->GetStringUTFChars(env, string, 0);
-            if (utf) {
-                arg = SDL_strdup(utf);
-                (*env)->ReleaseStringUTFChars(env, string, utf);
-            }
-            (*env)->DeleteLocalRef(env, string);
-        }
-        if (!arg) {
-            arg = SDL_strdup("");
-        }
-        argv[argc++] = arg;
-    }
-    argv[argc] = NULL;
-*/
-
-    /* Run the application. */
-
     status = SDL_main(/*argc, argv*/);
-
-    /* Release the arguments. */
-/*
-    for (i = 0; i < argc; ++i) {
-        SDL_free(argv[i]);
-    }
-    SDL_stack_free(argv);*/
-    /* Do not issue an exit or the whole application will terminate instead of just the SDL thread */
-    /* exit(status); */
 
     return status;
 }
+
+
+pub fn rust_main() {
+    let sdl_context = sdl2::init().unwrap();
+    let video_subsys = sdl_context.video().unwrap();
+    video_subsys.text_input().start();
+
+    let window = video_subsys.window("SDL2_TTF Example", SCREEN_WIDTH, SCREEN_HEIGHT)
+        .position_centered()
+        .opengl()
+        .build()
+        .unwrap();
+
+    let mut canvas = window.into_canvas().build().unwrap();
+
+    canvas.set_draw_color(Color::RGBA(195, 217, 255, 255));
+    canvas.clear();
+
+    let tile = game_tile::GameTile::new(0, 0, 100, 100, "A");
+
+    // Note: Defeats the purpose of having impl drawable and impl clickables
+    let mut entities: Vec<game_tile::GameTile> = Vec::new();
+    entities.push(tile);
+
+    {
+        let mut clickables = Vec::new();
+        let mut drawables = Vec::new();
+
+        clickables.push(entities.len() - 1);
+        drawables.push(entities.len() - 1);
+
+        canvas.present();
+
+        'mainloop: loop {
+            for event in sdl_context.event_pump().unwrap().poll_iter() {
+                match event {
+                    Event::MouseButtonUp {x, y, ..} => {
+                        for clickable_index in &clickables {
+                            let clickable = entities.get(*clickable_index).unwrap();
+                            clickable.respond(x, y);
+                        }
+                    },
+                    Event::KeyDown {keycode: Some(Keycode::Escape), ..} |
+                    Event::Quit {..} => break 'mainloop,
+                    Event::TextInput {text, ..} | Event::TextEditing {text, ..} => {
+                        println!("text: {}", text);
+
+                        if text == "q" {
+                            break 'mainloop
+                        }
+
+                        let tile = game_tile::GameTile::new(150 * (drawables.len() as i32 % 4), 150 * (drawables.len() as i32 / 4), 100, 100, &text);
+
+                        entities.push(tile);
+                        clickables.push(entities.len() - 1);
+                        drawables.push(entities.len() - 1);
+                    },
+                    _ => {}
+                }
+            }
+
+            canvas.set_draw_color(Color::RGBA(195, 217, 255, 255));
+            canvas.clear();
+            for drawable_index in &drawables {
+                let drawable = entities.get(*drawable_index).unwrap();
+                canvas = drawable.draw(canvas);
+            }
+            canvas.present();
+
+            ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+        }
+    }
+}
+
+
+static SCREEN_WIDTH : u32 = 800;
+static SCREEN_HEIGHT : u32 = 600;

@@ -40,10 +40,10 @@ To get iOS running:
 
 - Clone the SDL repo
 - Open the Xcode-iOS project and build the library for both the simulator and the device
-- Copy the resulting libraries in your target/[platform] folders 
+- Copy the resulting libraries in your target/[platform] folders
 - Clone the sdl2-image repo from http://hg.libsdl.org/SDL_image/
 - Open the Xcode-iOS project and build the library for both the simulator and the device
-- Copy the resulting libraries in your target/[platform] folders 
+- Copy the resulting libraries in your target/[platform] folders
 - Open the ios/minigame Xcode project and run it
 
 # Building the Android standalone toolchain
@@ -57,7 +57,7 @@ To get iOS running:
 # Configuration for Android linking
 
 For the time being you have to use a standalone toolchain. I'm pretty sure this can be solved with some clever
-code in `build.rs` by setting the correct sysroot, but that's something left for later. 
+code in `build.rs` by setting the correct sysroot, but that's something left for later.
 
 Edit `.cargo/config` and add the following:
 
@@ -117,3 +117,8 @@ cp target/x86_64-linux-android/debug/libminigame.so android/Minigame/app/src/mai
 cd android/Minigame/app
 ../gradlew assemble
 ```
+
+
+# Pete's Notes
+- Had to download NDK and SDK for android
+- Had to accept SDK licenses `android-sdk/tools/bin/sdkmanager --licenses`

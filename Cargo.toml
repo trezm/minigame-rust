@@ -6,9 +6,9 @@ build = "build.rs"
 
 [dependencies]
 dynamic_reload = {version = "0.2.1", optional=true}
-sdl2 = { default-features = false, features = ["unsafe_textures"], git = "https://github.com/Rust-SDL2/rust-sdl2.git", branch = "unsafe-textures-feature" }
+sdl2 = { version = "0.31.0", default-features = false, features = ["unsafe_textures", "ttf"] }
 cgmath = "0.14.1"
-rusttype = "0.2.1"
+rusttype = "0.6"
 png = "0.7.0"
 rand = "*"
 log = "0.3.8"

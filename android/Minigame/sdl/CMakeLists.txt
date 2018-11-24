@@ -22,7 +22,7 @@ add_library( # Sets the name of the library.
              SHARED
 
              # Provides a relative path to your source file(s).
-             #src/main/cpp/native-lib.cpp 
+             #src/main/cpp/native-lib.cpp
         #src/SDL/android.c
         src/SDL/src/SDL.c
         src/SDL/src/SDL_assert.c
@@ -114,7 +114,7 @@ add_library( # Sets the name of the library.
         src/SDL/src/video/dummy/SDL_nullevents.c
         src/SDL/src/video/dummy/SDL_nullframebuffer.c
         src/SDL/src/video/dummy/SDL_nullvideo.c
-        src/SDL/src/audio/dummy/SDL_dummyaudio.c	
+        src/SDL/src/audio/dummy/SDL_dummyaudio.c
 
             src/SDL/src/thread/pthread/SDL_syscond.c
             src/SDL/src/thread/pthread/SDL_sysmutex.c
@@ -175,7 +175,7 @@ target_link_libraries( # Specifies the target library.
 
                        # Links the target library to the log library
                        # included in the NDK.
-                       ${log-lib} 
+                       ${log-lib}
                        ${GLESv1_CM-lib}
                        ${EGL-lib}
                        ${GLESv2-lib}
